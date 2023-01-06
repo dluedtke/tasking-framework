@@ -50,6 +50,13 @@ srcSources = $(wildcard src/*.cpp)
 srcDependencies = $(patsubst src/%,build/%,$(srcSources:.cpp=.d))
 srcObjects = $(patsubst src/%,build/%,$(srcSources:.cpp=.o))
 
+# Find out channel files and convert to objects in build folder
+channelsSources = $(wildcard channels/src/*.cpp)
+channelsDependencies = $(patsubst channels/src/%,build/%,$(channelsSources:.cpp=.d))
+channelsObjects = $(patsubst channels/src/%,build/%,$(channelsSources:.cpp=.o))
+
+CXXFLAGS += -Ichannels/include
+
 testSource = $(wildcard test/*cpp)
 testObjects = $(patsubst %,build/%,$(testSource:.cpp=.o))
 
@@ -80,14 +87,15 @@ help :
 	@echo "                       include path in the CXXFLAGS."
 
 # Generate lib file for the Tasking Framework
-lib: $(schedulerObjects) $(srcObjects) | build/lib
+lib: $(schedulerObjects) $(srcObjects) $(channelsObjects)| build/lib
 	@echo "<<<< Create lib for scheduler type $(platform) >>>>"
-	ar rcs build/lib/libtasking.a $(schedulerObjects) $(srcObjects)
+	ar rcs build/lib/libtasking.a $(schedulerObjects) $(srcObjects) $(channelsObjects)
 
 # Generate an install folder to roll out
 install: lib | build/tasking
 	@cp build/lib/libtasking.a build/tasking/lib/libtasking.a
 	@cp include/*.h build/tasking/include
+	@cp channels/include/channels/*.h build/tasking/include
 	@cp -r include/impl build/tasking/include/impl
 ifneq ("$(platform)", "custom")
 	@cp $(schedulerFolder)/*.h build/tasking/include
@@ -97,7 +105,7 @@ endif
 	@echo "Tasking framework for $(platform) provided in folder build/tasking."
 	
 # Update dependencies
-depend: $(srcDependencies) $(schedulerDependencies)
+depend: $(srcDependencies) $(schedulerDependencies) $(channelsDependencies)
 
 build/%.d: src/%.cpp | build
 	@$(CXX) -MM $(CXXFLAGS) $< > $@
@@ -105,6 +113,11 @@ build/%.d: src/%.cpp | build
 	@echo -e "\t$(CXX) -c $(CXXFLAGS) $< -o $@" >> $@
 	@sed -i '$$s/\.d/.o/' $@
 build/%.d: $(schedulerFolder)/%.cpp | build
+	@$(CXX) -MM $(CXXFLAGS) $< > $@
+	@sed -i '1s/.*/build\/&/; $$s/.*/& | build/' $@
+	@echo -e "\t$(CXX) -c $(CXXFLAGS) $< -o $@" >> $@
+	@sed -i '$$s/\.d/.o/' $@
+build/%.d: channels/src/%.cpp | build
 	@$(CXX) -MM $(CXXFLAGS) $< > $@
 	@sed -i '1s/.*/build\/&/; $$s/.*/& | build/' $@
 	@echo -e "\t$(CXX) -c $(CXXFLAGS) $< -o $@" >> $@
@@ -151,5 +164,5 @@ build:
 examples:
 	@$(MAKE) -C examples all
 	
--include $(srcDependencies) $(schedulerDependencies)
+-include $(srcDependencies) $(schedulerDependencies) $(channelsDependencies)
 	
