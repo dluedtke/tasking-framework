@@ -110,12 +110,12 @@ depend: $(srcDependencies) $(schedulerDependencies) $(channelsDependencies)
 build/%.d: src/%.cpp | build
 	@$(CXX) -MM $(CXXFLAGS) $< > $@
 	@sed -i '1s/.*/build\/&/; $$s/.*/& | build/' $@
-	@echo -e "\t$(CXX) -c $(CXXFLAGS) $< -o $@" >> $@
+	@echo "\t$(CXX) -c $(CXXFLAGS) $< -o $@" >> $@
 	@sed -i '$$s/\.d/.o/' $@
 build/%.d: $(schedulerFolder)/%.cpp | build
 	@$(CXX) -MM $(CXXFLAGS) $< > $@
 	@sed -i '1s/.*/build\/&/; $$s/.*/& | build/' $@
-	@echo -e "\t$(CXX) -c $(CXXFLAGS) $< -o $@" >> $@
+	@echo "\t$(CXX) -c $(CXXFLAGS) $< -o $@" >> $@
 	@sed -i '$$s/\.d/.o/' $@
 build/%.d: channels/src/%.cpp | build
 	@$(CXX) -MM $(CXXFLAGS) $< > $@
